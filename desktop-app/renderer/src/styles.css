@@ -1,0 +1,25 @@
+body {
+  background: #0f172a;
+  color: white;
+  font-family: sans-serif;
+}
+
+.card {
+  width: 300px;
+  margin: 100px auto;
+  padding: 20px;
+  background: #1e293b;
+  border-radius: 10px;
+  text-align: center;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.link {
+  color: #38bdf8;
+  cursor: pointer;
+}

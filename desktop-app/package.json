@@ -1,0 +1,64 @@
+{
+  "name": "ai-overlay-desktop",
+  "version": "1.0.1",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "postinstall": "cd renderer && npm install",
+    "renderer:dev": "cd renderer && vite",
+    "dev": "concurrently -k -n RENDERER,ELECTRON -c \"blue,green\" \"npm run renderer:dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "start": "electron .",
+    "build:renderer": "cd renderer && vite build",
+    "build": "npm run build:renderer && electron-builder",
+    "pack": "electron-builder --dir",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "electron-is-dev": "^2.0.0",
+    "electron-store": "^8.0.0",
+    "robotjs": "^0.6.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "electron": "^27.3.11",
+    "electron-builder": "^24.0.0",
+    "eslint": "^9.20.0",
+    "wait-on": "^9.0.3",
+    "@vitejs/plugin-react": "^4.1.0",
+    "vite": "^5.0.0"
+  },
+  "build": {
+    "appId": "com.patrice.aioverlay",
+    "productName": "AI Overlay Desktop",
+    "directories": {
+      "buildResources": "assets",
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets"
+    }
+  }
+}
