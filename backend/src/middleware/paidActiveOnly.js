@@ -20,3 +20,23 @@ module.exports = [
     next();
   }
 ];
+module.exports = function (req, res, next) {
+  if (!req.user.paid || !req.user.active) {
+    return res.status(403).json({ error: "Not approved" });
+  }
+  next();
+};
+
+module.exports = (req, res, next) => {
+  if (!req.user.paid || !req.user.active) {
+    return res.status(403).json({ error: "Not approved" });
+  }
+  next();
+};
+
+module.exports = (req, res, next) => {
+  if (!req.user.paid || !req.user.active) {
+    return res.status(403).json({ error: "Access denied" });
+  }
+  next();
+};

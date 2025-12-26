@@ -1,7 +1,7 @@
 import { useState } from "react";
-import Login from "./components/Login";
-import Signup from "./components/Signup";
-import Dashboard from "./components/Dashboard";
+import Login from "../components/Login.jsx";
+import Signup from "../components/Signup.jsx";
+import Dashboard from "../components/AdminDashboard.jsx";
 
 export default function App() {
   const [user, setUser] = useState(null);

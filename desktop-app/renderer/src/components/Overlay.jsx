@@ -1,8 +1,34 @@
-export default function Overlay() {
-  const askAI = () => {
-    const answer = "Generated AI text";
-    window.ai.paste(answer);
-  };
+import { useState } from "react";
+import { askAI } from "../utils/api";
 
-  return <button onClick={askAI}>Insert AI</button>;
+export default function Chat({ token }) {
+  const [text, setText] = useState("");
+  const [answer, setAnswer] = useState("");
+
+  async function handleAsk() {
+    const res = await askAI(text, token);
+    setAnswer(res.reply);
+  }
+
+  function insertToApp() {
+    window.electron.insertText(answer);
+  }
+
+  return (
+    <div>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Ask AI…"
+      />
+      <button onClick={handleAsk}>Ask</button>
+
+      {answer && (
+        <>
+          <pre>{answer}</pre>
+          <button onClick={insertToApp}>Insert into app</button>
+        </>
+      )}
+    </div>
+  );
 }
