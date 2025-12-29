@@ -1,28 +1,56 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Login from "../components/Login";
+import Signup from "../components/Signup";
+import AdminDashboard from "../components/AdminDashboard";
+import Chat from "../components/Chat";
 
 export default function App() {
-  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [isAdmin, setIsAdmin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
 
-  if (!user) {
+  useEffect(() => {
+    if (!token) return;
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    setIsAdmin(payload.role === "admin");
+  }, [token]);
+
+  function handleLogin(token) {
+    localStorage.setItem("token", token);
+    setToken(token);
+  }
+
+  function logout() {
+    localStorage.removeItem("token");
+    setToken(null);
+  }
+
+  if (!token) {
     return (
-      <div style={{ textAlign: "center", padding: "2rem" }}>
-        <h1>{showSignup ? "Signup Form" : "Login Form"}</h1>
-        <button onClick={() => setShowSignup(!showSignup)}>
-          {showSignup ? "Back to Login" : "Go to Signup"}
-        </button>
-        <button onClick={() => setUser({ name: "Test User" })}>
-          Simulate Login
-        </button>
+      <div className="app-container">
+        {showSignup ? (
+          <>
+            <Signup onSuccess={() => setShowSignup(false)} />
+            <button onClick={() => setShowSignup(false)}>
+              Back to Login
+            </button>
+          </>
+        ) : (
+          <>
+            <Login onLogin={handleLogin} />
+            <button onClick={() => setShowSignup(true)}>
+              Go to Signup
+            </button>
+          </>
+        )}
       </div>
     );
   }
 
   return (
-    <div style={{ textAlign: "center", padding: "2rem" }}>
-      <h1>Dashboard</h1>
-      <p>Welcome, {user.name}!</p>
-      <button onClick={() => setUser(null)}>Logout</button>
+    <div className="app-container">
+      <button onClick={logout}>Logout</button>
+      {isAdmin ? <AdminDashboard /> : <Chat />}
     </div>
   );
 }

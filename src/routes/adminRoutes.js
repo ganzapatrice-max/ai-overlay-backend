@@ -1,20 +1,36 @@
-const router = require("express").Router();
-const auth = require("../middleware/authMiddleware");
+const express = require("express");
+const router = express.Router();
+const authRequired = require("../middleware/authRequired");
+const adminOnly = require("../middleware/adminOnly");
 const User = require("../models/User");
 
-router.get("/users", auth, (req, res) => {
-  if (req.user.role !== "admin") return res.sendStatus(403);
-  res.json(User.findAll());
+// Get all users
+router.get("/users", authRequired, adminOnly, async (req, res) => {
+  const users = await User.find().select("-password");
+  res.json(users);
 });
 
-router.post("/approve", auth, (req, res) => {
-  if (req.user.role !== "admin") return res.sendStatus(403);
-
-  const { email } = req.body;
-  const user = User.update(email, { paid: true, active: true });
-
-  if (!user) return res.status(404).json({ error: "User not found" });
+// Approve user
+router.put("/approve/:id", authRequired, adminOnly, async (req, res) => {
+  await User.findByIdAndUpdate(req.params.id, {
+    paid: true,
+    active: true,
+  });
   res.json({ message: "User approved" });
+});
+
+// Deactivate user
+router.put("/deactivate/:id", authRequired, adminOnly, async (req, res) => {
+  await User.findByIdAndUpdate(req.params.id, {
+    active: false,
+  });
+  res.json({ message: "User deactivated" });
+});
+
+// Delete user
+router.delete("/delete/:id", authRequired, adminOnly, async (req, res) => {
+  await User.findByIdAndDelete(req.params.id);
+  res.json({ message: "User deleted" });
 });
 
 module.exports = router;

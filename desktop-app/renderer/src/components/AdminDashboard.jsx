@@ -1,36 +1,71 @@
 import { useEffect, useState } from "react";
-import { getUsers, updateUser } from "../utils/api";
+import {
+  getUsers,
+  approveUser,
+  deactivateUser,
+  deleteUser,
+} from "../utils/api";
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
-  const token = localStorage.getItem("token");
+  const [error, setError] = useState("");
+
+  async function loadUsers() {
+    try {
+      const res = await getUsers();
+      setUsers(res.data);
+    } catch (err) {
+      setError("Failed to load users");
+    }
+  }
 
   useEffect(() => {
-    getUsers(token).then(setUsers);
+    loadUsers();
   }, []);
-
-  const toggle = (id, field, value) => {
-    updateUser(id, { [field]: value }, token).then(() =>
-      setUsers(u =>
-        u.map(x => (x.id === id ? { ...x, [field]: value } : x))
-      )
-    );
-  };
 
   return (
     <div>
       <h2>Admin Dashboard</h2>
-      {users.map(u => (
-        <div key={u.id}>
-          {u.email}
-          <button onClick={() => toggle(u.id, "paid", !u.paid)}>
-            Paid: {String(u.paid)}
-          </button>
-          <button onClick={() => toggle(u.id, "active", !u.active)}>
-            Active: {String(u.active)}
-          </button>
-        </div>
-      ))}
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
+      <table border="1" cellPadding="8">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Paid</th>
+            <th>Active</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {users.map((u) => (
+            <tr key={u._id}>
+              <td>{u.email}</td>
+              <td>{String(u.paid)}</td>
+              <td>{String(u.active)}</td>
+              <td>
+                {!u.active && (
+                  <button onClick={() => approveUser(u._id).then(loadUsers)}>
+                    Approve
+                  </button>
+                )}
+                {u.active && (
+                  <button onClick={() => deactivateUser(u._id).then(loadUsers)}>
+                    Deactivate
+                  </button>
+                )}
+                <button
+                  onClick={() => deleteUser(u._id).then(loadUsers)}
+                  style={{ color: "red" }}
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
