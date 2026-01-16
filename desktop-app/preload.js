@@ -1,33 +1,22 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
-contextBridge.exposeInMainWorld("electronAPI", {
-  hideOverlay: () => ipcRenderer.send("hide-overlay"),
-});
-
 contextBridge.exposeInMainWorld("electron", {
+  // Overlay controls
   hideOverlay: () => ipcRenderer.send("hide-overlay"),
+
+  // Clipboard
+  insertText: (text) => ipcRenderer.send("insert-text", text),
+  copySelection: () => ipcRenderer.invoke("copy-selection"),
+
+  // Auth / token
   saveToken: (token) => ipcRenderer.send("save-token", token),
   getToken: () => ipcRenderer.invoke("get-token"),
   logout: () => ipcRenderer.send("logout"),
-});
 
-const { contextBridge, ipcRenderer } = require("electron");
+  // Utility: send custom IPC messages
+  send: (channel, data) => ipcRenderer.send(channel, data),
+  invoke: (channel, data) => ipcRenderer.invoke(channel, data),
 
-contextBridge.exposeInMainWorld("electron", {
-  insertText: text => ipcRenderer.send("insert-text", text),
-});
-
-const { contextBridge, ipcRenderer } = require("electron");
-
-contextBridge.exposeInMainWorld("electronAPI", {
-  insertText: (text) => ipcRenderer.send("insert-text", text),
-  saveToken: (token) => ipcRenderer.send("save-token", token),
-  onSelectedText: (callback) =>
-    ipcRenderer.on("selected-text", (_, text) => callback(text)),
-});
-
-const { contextBridge, ipcRenderer } = require("electron");
-
-contextBridge.exposeInMainWorld("electron", {
-  hide: () => ipcRenderer.send("hide-overlay"),
+  // Listen to messages from main
+  on: (channel, listener) => ipcRenderer.on(channel, listener),
 });

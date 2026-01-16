@@ -19,6 +19,22 @@ export default function AdminDashboard() {
     }
   }
 
+  async function handleApprove(id) {
+    await approveUser(id);
+    loadUsers();
+  }
+
+  async function handleDeactivate(id) {
+    await deactivateUser(id);
+    loadUsers();
+  }
+
+  async function handleDelete(id) {
+    if (!window.confirm("Delete this user?")) return;
+    await deleteUser(id);
+    loadUsers();
+  }
+
   useEffect(() => {
     loadUsers();
   }, []);
@@ -28,7 +44,7 @@ export default function AdminDashboard() {
       <h2>Admin Dashboard</h2>
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      <table border="1" cellPadding="8">
+      <table border="1" cellPadding="6">
         <thead>
           <tr>
             <th>Email</th>
@@ -46,19 +62,18 @@ export default function AdminDashboard() {
               <td>{String(u.active)}</td>
               <td>
                 {!u.active && (
-                  <button onClick={() => approveUser(u._id).then(loadUsers)}>
+                  <button onClick={() => handleApprove(u._id)}>
                     Approve
                   </button>
                 )}
+
                 {u.active && (
-                  <button onClick={() => deactivateUser(u._id).then(loadUsers)}>
+                  <button onClick={() => handleDeactivate(u._id)}>
                     Deactivate
                   </button>
                 )}
-                <button
-                  onClick={() => deleteUser(u._id).then(loadUsers)}
-                  style={{ color: "red" }}
-                >
+
+                <button onClick={() => handleDelete(u._id)}>
                   Delete
                 </button>
               </td>

@@ -1,25 +1,37 @@
-body {
-  background: #0f172a;
+.card {
+  background: rgba(0, 0, 0, 0.65);
+  padding: 14px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
   color: white;
-  font-family: sans-serif;
 }
 
-.card {
-  width: 300px;
-  margin: 100px auto;
-  padding: 20px;
-  background: #1e293b;
-  border-radius: 10px;
-  text-align: center;
+textarea {
+  width: 100%;
+  min-height: 80px;
+  margin-top: 8px;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: white;
+  padding: 8px;
+  border-radius: 6px;
 }
 
 button {
   width: 100%;
-  padding: 10px;
   margin-top: 10px;
+  padding: 10px;
+  background: #0078ff;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
 }
 
-.link {
-  color: #38bdf8;
-  cursor: pointer;
+button:hover {
+  background: #005fd1;
+}
+
+h3, h4 {
+  margin-top: 0;
 }
