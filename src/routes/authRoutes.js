@@ -1,40 +1,46 @@
 const express = require("express");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 const router = express.Router();
 
-/**
- * @route   POST /api/auth/signup
- * @desc    Register a new user
- */
+// =====================
+// Signup Route
+// =====================
 router.post("/signup", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { phone, email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
+    if (!phone) {
+      return res.status(400).json({ message: "Phone is required" });
+    }
+    if (!password) {
+      return res.status(400).json({ message: "Password is required" });
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    // Check if phone already exists
+    const existingUser = await User.findOne({ phone });
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({ message: "Phone already registered" });
     }
+
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
 
     // Create new user
     const newUser = await User.create({
+      phone,
       email,
-      password,
-      approved: false,
+      passwordHash,
       active: false,
       paid: false,
-      role: "user",
+      isAdmin: false,
     });
 
     res.status(201).json({
-      message: "Signup successful. Wait for admin approval.",
-      user: newUser,
+      message: "Signup successful. Wait for admin approval ✅",
+      user: newUser.toSafe(),
     });
   } catch (error) {
     console.error("Signup error:", error);
@@ -45,46 +51,52 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-/**
- * @route   POST /api/auth/login
- * @desc    Login user and return JWT
- */
+// =====================
+// Login Route
+// =====================
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { phone, password } = req.body;
 
-    const user = await User.findOne({ email });
+    if (!phone || !password) {
+      return res.status(400).json({ message: "Phone and password are required" });
+    }
 
-    if (!user || user.password !== password) {
+    const user = await User.findOne({ phone });
+    if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    if (!user.approved || !user.active) {
-      return res.status(403).json({
-        message: "User not approved or inactive",
-      });
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (!user.active) {
+      return res.status(403).json({ message: "User is not active" });
     }
 
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
+      { id: user._id, phone: user.phone, isAdmin: user.isAdmin },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
-    res.json({ token, user });
+    res.json({
+      message: "Login successful ✅",
+      token,
+      user: user.toSafe(),
+    });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({
-      message: "Server error during login",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Server error during login", error: error.message });
   }
 });
 
-/**
- * @route   GET /api/auth/admin/users
- * @desc    List all users
- */
+// =====================
+// Admin Routes (unchanged)
+// =====================
 router.get("/admin/users", async (req, res) => {
   try {
     const users = await User.find().sort({ createdAt: -1 });
@@ -95,54 +107,31 @@ router.get("/admin/users", async (req, res) => {
   }
 });
 
-/**
- * @route   PUT /api/auth/admin/approve/:id
- * @desc    Approve a user
- */
 router.put("/admin/approve/:id", async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { approved: true, active: true },
+      { active: true, paid: true },
       { new: true }
     );
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.json({
-      message: "User approved successfully",
-      user,
-    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ message: "User approved successfully ✅", user });
   } catch (error) {
     console.error("Approve user error:", error);
     res.status(500).json({ message: "Failed to approve user" });
   }
 });
 
-/**
- * @route   PUT /api/auth/admin/update/:id
- * @desc    Update user fields (active, approved, paid)
- */
 router.put("/admin/update/:id", async (req, res) => {
   try {
-    const { active, approved, paid } = req.body;
-
+    const { active, paid, isAdmin } = req.body;
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { active, approved, paid },
+      { active, paid, isAdmin },
       { new: true }
     );
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.json({
-      message: "User updated successfully",
-      user,
-    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ message: "User updated successfully ✅", user });
   } catch (error) {
     console.error("Update user error:", error);
     res.status(500).json({ message: "Failed to update user" });
