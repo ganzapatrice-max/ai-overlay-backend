@@ -8,7 +8,13 @@ const app = express();
 // =====================
 // Middleware
 // =====================
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.use(express.json());
 
 // =====================
@@ -26,17 +32,41 @@ app.get("/", (req, res) => {
 });
 
 // =====================
+// MongoDB Status route
+// =====================
+app.get("/api/status", (req, res) => {
+  const state = mongoose.connection.readyState; // 0=disconnected, 1=connected
+  res.json({
+    dbState: state,
+    message: state === 1 ? "MongoDB is connected ✅" : "MongoDB not connected ❌",
+  });
+});
+
+// =====================
 // MongoDB Connection & Server Start
 // =====================
 const PORT = process.env.PORT || 5000;
 
-const connectDB = async () => {
+async function connectDB() {
   try {
     console.log("🔄 Connecting to MongoDB...");
-    await mongoose.connect(process.env.MONGO_URI);
+    console.log(
+      "📡 Mongo URI:",
+      process.env.MONGO_URI
+        ? process.env.MONGO_URI.replace(/\/\/.*?:.*?@/, "//<hidden>:<hidden>@")
+        : "❌ MONGO_URI not set"
+    );
+
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    });
 
     console.log("✅ MongoDB connected successfully");
 
+    // Start server only after DB is connected
     app.listen(PORT, () => {
       console.log(`🚀 Backend running on port ${PORT}`);
     });
@@ -45,7 +75,7 @@ const connectDB = async () => {
     console.log("⏳ Retrying in 5 seconds...");
     setTimeout(connectDB, 5000);
   }
-};
+}
 
 // Start MongoDB connection
 connectDB();
