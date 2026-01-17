@@ -35,7 +35,7 @@ app.get("/", (req, res) => {
 // MongoDB Status route
 // =====================
 app.get("/api/status", (req, res) => {
-  const state = mongoose.connection.readyState; // 0=disconnected, 1=connected
+  const state = mongoose.connection.readyState; // 0=disconnected, 1=connected, 2=connecting, 3=disconnecting
   res.json({
     dbState: state,
     message: state === 1 ? "MongoDB is connected ✅" : "MongoDB not connected ❌",
@@ -57,11 +57,10 @@ async function connectDB() {
         : "❌ MONGO_URI not set"
     );
 
+    // ===== Mongoose v7+ connection =====
     await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 10000, // optional
+      socketTimeoutMS: 45000,           // optional
     });
 
     console.log("✅ MongoDB connected successfully");
