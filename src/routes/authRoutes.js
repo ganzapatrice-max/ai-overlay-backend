@@ -1,28 +1,30 @@
 const express = require("express");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
-
 const router = express.Router();
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const User = require("../models/User");
+const { authenticate, adminOnly } = require("../middleware/authMiddleware");
 
 // =====================
-// Signup Route
+// POST /api/auth/signup
 // =====================
 router.post("/signup", async (req, res) => {
   try {
     const { phone, email, password } = req.body;
 
-    if (!phone) {
-      return res.status(400).json({ message: "Phone is required" });
-    }
-    if (!password) {
-      return res.status(400).json({ message: "Password is required" });
+    // Validate required fields
+    if (!phone || !password) {
+      return res.status(400).json({
+        message: "Phone and password are required ❌",
+      });
     }
 
-    // Check if phone already exists
+    // Check if user already exists
     const existingUser = await User.findOne({ phone });
     if (existingUser) {
-      return res.status(400).json({ message: "Phone already registered" });
+      return res.status(400).json({
+        message: "User with this phone already exists ❌",
+      });
     }
 
     // Hash password
@@ -33,8 +35,8 @@ router.post("/signup", async (req, res) => {
       phone,
       email,
       passwordHash,
-      active: false,
       paid: false,
+      active: false,
       isAdmin: false,
     });
 
@@ -45,96 +47,72 @@ router.post("/signup", async (req, res) => {
   } catch (error) {
     console.error("Signup error:", error);
     res.status(500).json({
-      message: "Server error during signup",
+      message: "Server error during signup ❌",
       error: error.message,
     });
   }
 });
 
 // =====================
-// Login Route
+// POST /api/auth/login
 // =====================
 router.post("/login", async (req, res) => {
   try {
     const { phone, password } = req.body;
 
     if (!phone || !password) {
-      return res.status(400).json({ message: "Phone and password are required" });
+      return res.status(400).json({ message: "Phone and password are required ❌" });
     }
 
     const user = await User.findOne({ phone });
+
     if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Invalid credentials ❌" });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Invalid credentials ❌" });
     }
 
+    // Check if user is active
     if (!user.active) {
-      return res.status(403).json({ message: "User is not active" });
+      return res.status(403).json({ message: "User is not active ❌" });
     }
 
+    // Create JWT
     const token = jwt.sign(
       { id: user._id, phone: user.phone, isAdmin: user.isAdmin },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
-    res.json({
+    res.status(200).json({
       message: "Login successful ✅",
       token,
       user: user.toSafe(),
     });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ message: "Server error during login", error: error.message });
+    res.status(500).json({
+      message: "Server error during login ❌",
+      error: error.message,
+    });
   }
 });
 
 // =====================
-// Admin Routes (unchanged)
+// GET /api/auth/me
 // =====================
-router.get("/admin/users", async (req, res) => {
+router.get("/me", authenticate, async (req, res) => {
   try {
-    const users = await User.find().sort({ createdAt: -1 });
-    res.json(users);
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found ❌" });
+    res.status(200).json({ user: user.toSafe() });
   } catch (error) {
-    console.error("Get users error:", error);
-    res.status(500).json({ message: "Failed to fetch users" });
-  }
-});
-
-router.put("/admin/approve/:id", async (req, res) => {
-  try {
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { active: true, paid: true },
-      { new: true }
-    );
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json({ message: "User approved successfully ✅", user });
-  } catch (error) {
-    console.error("Approve user error:", error);
-    res.status(500).json({ message: "Failed to approve user" });
-  }
-});
-
-router.put("/admin/update/:id", async (req, res) => {
-  try {
-    const { active, paid, isAdmin } = req.body;
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { active, paid, isAdmin },
-      { new: true }
-    );
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json({ message: "User updated successfully ✅", user });
-  } catch (error) {
-    console.error("Update user error:", error);
-    res.status(500).json({ message: "Failed to update user" });
+    console.error("Get me error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
