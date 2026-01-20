@@ -1,39 +1,46 @@
 import { useState } from "react";
-import { signup } from "../utils/api";
+import API from "../utils/api";
 
-export default function Signup({ onLogin }) {
+export default function Signup() {
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSignup = async () => {
-    setLoading(true);
-    setMessage("");
-
+  async function handleSignup(e) {
+    e.preventDefault();
     try {
-      const res = await signup({ email, password });
-      console.log("Signup response:", res);
-      setMessage(res.data?.message || "Signup successful");
+      await API.post("/auth/signup", {
+        phone,
+        email,
+        password,
+      });
+      alert("Signup successful! Wait for admin approval.");
     } catch (err) {
-      console.error("Signup error:", err);
-      setMessage(
-        err.response?.data?.message || err.message || "Signup failed"
-      );
-    } finally {
-      setLoading(false);
+      setError(err.response?.data?.message || "Signup failed");
     }
-  };
+  }
 
   return (
-    <div className="card">
+    <form onSubmit={handleSignup}>
       <h2>Sign Up</h2>
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
+      <input
+        type="text"
+        placeholder="Phone"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+        required
+      />
 
       <input
         type="email"
         placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
+        required
       />
 
       <input
@@ -41,19 +48,10 @@ export default function Signup({ onLogin }) {
         placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
+        required
       />
 
-      <button onClick={handleSignup} disabled={loading}>
-        {loading ? "Submitting..." : "Sign Up"}
-      </button>
-
-      {message && (
-        <p style={{ marginTop: 10, color: "#ff7070" }}>{message}</p>
-      )}
-
-      <p onClick={onLogin} style={{ cursor: "pointer", marginTop: 10 }}>
-        Back to login
-      </p>
-    </div>
+      <button type="submit">Sign Up</button>
+    </form>
   );
 }
