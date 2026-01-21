@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { login } from "../utils/api";
 
-export default function Login({ onLogin, onSignup, onAdminLogin }) {
-  const [email, setEmail] = useState("");
+export default function Login({ onLogin, onSignup }) {
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      setMessage("Please fill all fields");
+    if (!phone || !password) {
+      setMessage("Phone and password are required ❌");
       return;
     }
 
@@ -17,31 +17,22 @@ export default function Login({ onLogin, onSignup, onAdminLogin }) {
     setMessage("");
 
     try {
-      const res = await login({ email, password });
+      const res = await login({ phone, password });
       const { token, user } = res.data;
 
       if (!user.active) {
-        setMessage("Account not activated by admin");
+        setMessage("Account not activated by admin ⏳");
         return;
       }
 
-      // Save token
       localStorage.setItem("token", token);
-      localStorage.setItem("isAdmin", user.isAdmin);
-
-      // Route based on role
-      if (user.isAdmin) {
-        onAdminLogin(token);   // Go to Admin Dashboard
-      } else {
-        onLogin(token);        // Go to normal user dashboard
-      }
-
+      onLogin(token);
     } catch (err) {
       console.error("Login error:", err);
+
       setMessage(
         err.response?.data?.message ||
-        err.message ||
-        "Login failed. Check your email and password."
+          "Login failed. Check your phone and password."
       );
     } finally {
       setLoading(false);
@@ -53,10 +44,10 @@ export default function Login({ onLogin, onSignup, onAdminLogin }) {
       <h2>Login</h2>
 
       <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        type="text"
+        placeholder="Phone"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
       />
 
       <input
@@ -76,7 +67,10 @@ export default function Login({ onLogin, onSignup, onAdminLogin }) {
         </p>
       )}
 
-      <p onClick={onSignup} style={{ cursor: "pointer", marginTop: 10 }}>
+      <p
+        onClick={onSignup}
+        style={{ cursor: "pointer", marginTop: 10, color: "#7aa2ff" }}
+      >
         Create account
       </p>
     </div>
