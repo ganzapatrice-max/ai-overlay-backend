@@ -9,7 +9,7 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
 
-  // Decode JWT and determine role
+  // Decode JWT and determine admin status
   useEffect(() => {
     if (!token) {
       setIsAdmin(false);
@@ -18,23 +18,23 @@ export default function App() {
 
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
-      setIsAdmin(payload.role === "admin");
-    } catch (err) {
-      console.error("Invalid token:", err);
+      setIsAdmin(payload.isAdmin === true); // ✅ correct field
+    } catch (error) {
+      console.error("Invalid token:", error);
       localStorage.removeItem("token");
       setToken(null);
       setIsAdmin(false);
     }
   }, [token]);
 
-  // LOGOUT handler
+  // Logout
   const handleLogout = () => {
     localStorage.removeItem("token");
     setToken(null);
     setIsAdmin(false);
   };
 
-  // AUTH SCREENS
+  // If not logged in → show Login or Signup
   if (!token) {
     return showSignup ? (
       <Signup onBack={() => setShowSignup(false)} />
@@ -49,7 +49,7 @@ export default function App() {
     );
   }
 
-  // MAIN OVERLAY
+  // Logged in → show Admin Dashboard or Chat
   return (
     <div id="container">
       <button

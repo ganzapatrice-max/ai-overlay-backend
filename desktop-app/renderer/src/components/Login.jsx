@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { login } from "../utils/api";
 
-export default function Login({ onLogin, onSignup }) {
+export default function Login({ onLogin, onSignup, onAdminLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,11 +25,19 @@ export default function Login({ onLogin, onSignup }) {
         return;
       }
 
+      // Save token
       localStorage.setItem("token", token);
-      onLogin(token);
+      localStorage.setItem("isAdmin", user.isAdmin);
+
+      // Route based on role
+      if (user.isAdmin) {
+        onAdminLogin(token);   // Go to Admin Dashboard
+      } else {
+        onLogin(token);        // Go to normal user dashboard
+      }
+
     } catch (err) {
       console.error("Login error:", err);
-
       setMessage(
         err.response?.data?.message ||
         err.message ||
