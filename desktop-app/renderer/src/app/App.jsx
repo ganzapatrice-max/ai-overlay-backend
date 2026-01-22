@@ -5,7 +5,7 @@ import AdminDashboard from "../components/AdminDashboard";
 import Chat from "../components/Chat";
 
 export default function App() {
-  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [token, setToken] = useState(() => localStorage.getItem("token"));
   const [isAdmin, setIsAdmin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
 
@@ -17,8 +17,13 @@ export default function App() {
     }
 
     try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      setIsAdmin(payload.isAdmin === true); // ✅ correct field
+      const base64Payload = token.split(".")[1];
+      const payload = JSON.parse(atob(base64Payload));
+
+      console.log("Decoded token:", payload);
+
+      // Your backend sends: { isAdmin: true/false }
+      setIsAdmin(payload.isAdmin === true);
     } catch (error) {
       console.error("Invalid token:", error);
       localStorage.removeItem("token");
@@ -32,24 +37,30 @@ export default function App() {
     localStorage.removeItem("token");
     setToken(null);
     setIsAdmin(false);
+    setShowSignup(false);
   };
 
-  // If not logged in → show Login or Signup
+  // When not logged in
   if (!token) {
-    return showSignup ? (
-      <Signup onBack={() => setShowSignup(false)} />
-    ) : (
-      <Login
-        onLogin={(t) => {
-          localStorage.setItem("token", t);
-          setToken(t);
-        }}
-        onSignup={() => setShowSignup(true)}
-      />
+    return (
+      <div id="container">
+        {showSignup ? (
+          <Signup onBack={() => setShowSignup(false)} />
+        ) : (
+          <Login
+            onLogin={(t) => {
+              console.log("Saving token:", t);
+              localStorage.setItem("token", t);
+              setToken(t);
+            }}
+            onSignup={() => setShowSignup(true)}
+          />
+        )}
+      </div>
     );
   }
 
-  // Logged in → show Admin Dashboard or Chat
+  // When logged in
   return (
     <div id="container">
       <button
@@ -65,6 +76,7 @@ export default function App() {
           borderRadius: 6,
           cursor: "pointer",
           fontSize: 12,
+          zIndex: 9999,
         }}
       >
         Logout
